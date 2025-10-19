@@ -29,7 +29,23 @@ app.get("/", (_req, res) => {
   res.json({ ok: true, message: "Airline backend connected to MongoDB!" });
 });
 
-// ---- Start server ----
-app.listen(PORT, () => {
-  console.log("Server running at http://localhost:" + PORT);
+// ---- Health route to show real DB status ----
+app.get("/status", (_req, res) => {
+  const states = ["disconnected", "connected", "connecting", "disconnecting"];
+  res.json({ dbState: states[mongoose.connection.readyState] });
 });
+// ---- Start server only after DB connects ----
+async function start() {
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log("MongoDB connected successfully!");
+
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+});
+  } catch (err) {
+    console.error("MongoDB connection error:", err.message);
+    process.exit(1); // stops app if DB connection fails
+  }
+}
+start();
